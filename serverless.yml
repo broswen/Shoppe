@@ -1,0 +1,56 @@
+
+service: shoppe
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 512
+  timeout: 5
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sns:Publish"
+        - "sqs:ReceiveMessage"
+        - "sqs:DeleteMessage"
+        - "sqs:GetQueueAttributes"
+        - "sqs:SendMessage"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+      Resource: 
+        - !Ref OrderConfirmedTopic
+        - !Ref OrderShippedTopic
+        - !GetAtt QueuedOrdersQueue.Arn
+        - !GetAtt OrdersTable.Arn
+
+  environment:
+    ORDERCONFIRMED_ARN: !Ref OrderConfirmedTopic
+    ORDERSHIPPED_ARN: !Ref OrderShippedTopic
+    QUEUEDORDERS_URL: !Ref QueuedOrdersQueue
+    ORDERS_NAME: !Ref OrdersTable
+
+functions:
+  NewOrder:
+    handler: src/lambdas/NewOrder.handler
+    events:
+      - http:
+          path: orders
+          method: post
+  GetOrder:
+    handler: src/lambdas/GetOrder.handler
+    events:
+      - http:
+          path: orders
+          method: get
+  ShipOrder:
+    handler: src/lambdas/ShipOrder.handler
+    events:
+      - sqs:
+          arn: !GetAtt QueuedOrdersQueue.Arn
+          batchSize: 5
+
+resources:
+  - ${file(./cfn-resources.yml)}

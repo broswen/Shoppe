@@ -1,0 +1,27 @@
+Resources:
+    OrderConfirmedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: OrderConfirmed
+      
+    OrderShippedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: OrderShipped
+
+    QueuedOrdersQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: QueuedOrders
+
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Orders
+        AttributeDefinitions:
+          - AttributeName: "_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "_id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
